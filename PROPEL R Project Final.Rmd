@@ -1,0 +1,148 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# R Project
+
+## Introduction
+
+The following dataset provides information related to births (baby weight and number) in the United States from 2016 to 2021. Specifically, it includes information on the mother including the mother's age and education level. The data was sourced from the Centers for Disease Control and Prevention (CDC).
+
+The weight of a baby can be a determinant on the baby's future physical development. They typical range of a healthy baby is between 2.50 - 4 grams, however there are some studies that suggest that heavier babies tend to do better in school. This project aims to uncover some correlations between mother's education level and baby weight.
+
+**References:**
+
+[https://kidshealth.org/en/parents/grownewborn.html#:\~:text=Newborns%20come%20in%20a%20range,average%20baby%20are%20usually%20fine.](https://kidshealth.org/en/parents/grownewborn.html#:~:text=Newborns%20come%20in%20a%20range,average%20baby%20are%20usually%20fine.)
+
+<https://www.nytimes.com/2014/10/12/upshot/heavier-babies-do-better-in-school.html>
+
+## Questions
+
+1.  Do we see a clear increase in births over the years?
+2.  Do mothers with a higher education tend to be older?
+3.  Is there a correlation between a baby's birth weight and a mother's age?
+
+## Retrieve data set and define necessary functions
+
+```{r}
+
+library(readr)
+library(dplyr)
+library(ggplot2)
+
+us_births_2016_2021 <- read_csv("data/us_births_2016_2021.csv")
+View(us_births_2016_2021)
+```
+
+## Q1: How does the number of births change from 2016 to 2021?
+
+```{r}
+#Group the years and number of births 
+year_Numberofbirths <- us_births_2016_2021[c('Year','Number of Births')]
+
+#Create new data frame for births and years 
+yearbirthDF <- year_Numberofbirths %>% 
+  group_by(Year) %>% 
+  summarize(Births = sum(`Number of Births`))
+
+#plot 
+xYears <- c(yearbirthDF$Year)
+yBirths <- c(yearbirthDF$Births)
+
+ggplot(yearbirthDF, aes(x=xYears, y=yBirths)) +
+   geom_line()+
+   ggtitle("Total number of Births in the US from 2016 to 2021")+
+   xlab("Year")+
+   ylab("Total Number of Births")
+   
+```
+
+## Q2: What is the correlation between Mother's Education Level and Age?
+
+```{r}
+#Group the education level, code and age 
+ageEduWeight <- us_births_2016_2021[c(6,8,9)]
+
+ageEduDF <- ageEduWeight %>% 
+  group_by(`Education Level Code`) %>%
+  summarise(Age = sum(`Average Age of Mother (years)`)/n()) 
+
+#Make new dataframe to remove -9 level code. Removed -9 level code as this was data in which mother's information was not specificed or unknown 
+ageEdu_adj <- subset(ageEduDF, `Education Level Code`> 0)
+
+xEdu <- c(ageEdu_adj$`Education Level Code`)
+yAge <- c(ageEdu_adj$Age)
+
+
+ggplot(ageEdu_adj, aes(x=xEdu, y=yAge,group=1)) +#add group = 1 to make work
+    geom_bar(stat = "identity")+
+    ggtitle("Mother's Education Level in Relation to Averaged Age")+
+    xlab("Education Level of Code")+
+    ylab("Average Age of Mother (years)")+
+    coord_cartesian(ylim = c(20, 40))
+```
+
+**Education Level Codes:**
+
+1.  8th grade or less
+
+2.  9th to 12th grade (no diploma)
+
+3.  High school graduate
+
+4.  Some college credit (no degree)
+
+5.  Associate degree
+
+6.  Bachelor's Degree
+
+7.  Master's Degree
+
+8.  Doctorate or Professional Degree
+
+## Q3: What is the correlation between Mother's Education Level with Averaged Baby Weight?
+
+```{r}
+
+eduWeightDF <- ageEduWeight %>% 
+  group_by(`Education Level Code`) %>%
+  summarise(Weight = sum(`Average Birth Weight (g)`)/n()) 
+
+#Make new dataframe to remove -9 level code. Removed -9 level code as this was data in which mother's information was not specificed or unknown 
+eduWeight_adj <- subset(eduWeightDF, `Education Level Code`> 0)
+
+xEdu2 <- c(eduWeight_adj$`Education Level Code`)
+yWeight <- c(eduWeight_adj$`Weight`)
+
+ggplot(eduWeight_adj, aes(x=xEdu2, y=yWeight,group=1)) +#add group = 1 to make work
+  geom_bar(stat = "identity")+
+  ggtitle("Averaged Baby Weight to Education Code Level")+
+  xlab("Education Level Code")+
+  ylab("Averaged Baby Weight (g)")+
+  coord_cartesian(ylim = c(3000, 3500))
+
+```
+
+**Education Level Codes:**
+
+1.  8th grade or less
+2.  9th to 12th grade (no diploma)
+3.  High school graduate
+4.  Some college credit (no degree)
+5.  Associate degree
+6.  Bachelor's Degree
+7.  Master's Degree
+8.  Doctorate or Professional Degree
+
+## Conclusions:
+
+1.  Births in the US decreased from 2016 to 2020 and increased in 2021
+2.  Average age of mothers generally increased with higher education level, with the exception of those who only had an 8th grade or less education (higher average age)
+3.  Higher education level tend to have a larger baby weight. However, a noticeably decline is seen in mother's with an education higher than a bachelor's degree
+
+## Future Questions to be Explored   
+
+1.  Do certain states in the US have a significantly lower or higher baby weight average? And is this dependent on mother's education level or age (or both?)?
+2.  Run statistically testing to determine significance of mother's education level to baby weight
+3.  Higher education tends to have higher baby weight, but is this independent of higher average age?
